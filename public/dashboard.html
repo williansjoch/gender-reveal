@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard de Asistencia · Gran Torneo</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Raleway:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { padding: 40px 20px; background: var(--bg-deep); min-height: 100vh; }
+    .dash-container { max-width: 1100px; margin: 0 auto; z-index: 10; position: relative; }
+    .dash-header { text-align: center; margin-bottom: 40px; }
+    .dash-title { font-family: var(--ff-display); color: var(--gold); font-size: 2rem; }
+
+    /* ── Auth ── */
+    .admin-auth { margin-bottom: 30px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .admin-input {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--glass-border);
+      color: white;
+      padding: 10px 15px;
+      border-radius: 8px;
+      min-width: 240px;
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-bottom: 16px;
+      font-size: 0.75rem;
+      color: var(--text-3);
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #4CAF50;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.3; }
+    }
+
+    /* ── Stat cards ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .stat-card { text-align: center; padding: 30px; position: relative; overflow: hidden; }
+    .stat-card svg { position: absolute; top: 10px; right: 10px; opacity: 0.1; width: 40px; height: 40px; color: white; }
+    .stat-num { font-size: 2.5rem; font-weight: 800; display: block; margin-top: 10px; }
+    .stat-guerrero { color: var(--saiyan-1); }
+    .stat-guerrera { color: var(--capsule-2); }
+    .stat-total    { color: var(--gold); }
+
+    /* ── Visual Stats ── */
+    .visual-stats {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+    @media (max-width: 768px) { .visual-stats { grid-template-columns: 1fr; } }
+
+    .chart-card { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
+    .chart-container { width: 180px; height: 180px; position: relative; margin-bottom: 20px; }
+    .chart-container svg { transform: rotate(-90deg); width: 100%; height: 100%; overflow: visible; } /* overflow: visible para stroke-linecap: round */
+    .chart-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 20; } /* Fondo del círculo */
+    .chart-fill { fill: none; stroke-width: 20; stroke-dasharray: 251.327; stroke-dashoffset: 251.327; transition: stroke-dashoffset 1s ease-out; stroke-linecap: round; } /* Circunferencia para r=40 es 2*PI*40 = 251.327 */
+    .chart-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; font-family: var(--ff-display); }
+    .chart-total-val { font-size: 1.8rem; font-weight: 800; color: var(--gold); }
+    .chart-total-lbl { font-size: 0.6rem; text-transform: uppercase; color: var(--text-3); letter-spacing: 0.1em; }
+
+    .battle-card { padding: 30px; display: flex; flex-direction: column; justify-content: center; }
+    .battle-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--gold-dim); margin-bottom: 24px; text-align: center; }
+    .battle-row { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+    .battle-name { width: 90px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .battle-track { flex: 1; height: 24px; background: rgba(0,0,0,0.2); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+    .battle-fill { height: 100%; width: 0%; transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 0 15px currentColor; }
+    .battle-fill.guerrero { background: linear-gradient(90deg, #ff6d00, #ffd600); color: rgba(255,109,0,0.5); }
+    .battle-fill.guerrera { background: linear-gradient(90deg, #e91e8c, #00bcd4); color: rgba(233,30,140,0.5); }
+    .battle-pct { width: 45px; text-align: right; font-size: 1rem; font-weight: 800; }
+
+    .legend { display: flex; gap: 20px; justify-content: center; margin-top: 10px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-2); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.g-oro { background: var(--saiyan-1); }
+    .dot.g-pink { background: var(--capsule-1); }
+
+    /* ── Table ── */
+    .table-wrap {
+      overflow-x: auto;
+      background: rgba(0,0,0,0.3);
+      border-radius: 16px;
+      border: 1px solid var(--glass-border);
+    }
+    table { width: 100%; border-collapse: collapse; color: var(--text-2); }
+    th {
+      background: rgba(255,255,255,0.05);
+      color: var(--gold-dim);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+    }
+    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--glass-border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background: rgba(255,255,255,0.02); }
+    .badge { padding: 3px 8px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; }
+    .badge-attending    { background: rgba(0,200,0,0.15);   color: #5fff5f; }
+    .badge-maybe        { background: rgba(255,200,0,0.15); color: #ffd740; }
+    .badge-not-attending{ background: rgba(255,50,50,0.15); color: #ff6b6b; }
+    .badge-guerrero     { background: rgba(255,109,0,0.15); color: var(--saiyan-1); }
+    .badge-guerrera     { background: rgba(233,30,140,0.15);color: var(--capsule-2); }
+    .empty-row td { text-align: center; color: var(--text-3); padding: 40px; }
+
+    /* ── Action buttons ── */
+    .dash-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <div class="bg-overlay"></div>
+
+  <div class="dash-container">
+    <header class="dash-header">
+      <h1 class="dash-title">⚡ Recuento del Gran Torneo</h1>
+      <p style="color: var(--text-3)">Control de asistencia y votaciones en tiempo real</p>
+    </header>
+
+    <div class="admin-auth">
+      <input type="password" id="admin-key" class="admin-input" placeholder="Clave de acceso admin" />
+      <button onclick="loadData()" class="rsvp-btn btn-yes" style="padding:10px 20px;min-height:auto;">
+        Cargar Datos
+      </button>
+    </div>
+
+    <!-- Status bar (visible después del primer login) -->
+    <div class="status-bar" id="status-bar" style="display:none;">
+      <span class="status-dot"></span>
+      <span id="refresh-label">Actualización automática activa</span>
+      <span>·</span>
+      <span>Última actualización: <strong id="last-refresh">—</strong></span>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="glass-card stat-card">
+        <i data-lucide="users"></i>
+        <span class="ec-label">Total Confirmados</span>
+        <span id="stat-total" class="stat-num stat-total">—</span>
+      </div>
+      <div class="glass-card stat-card">
+        <i data-lucide="zap"></i>
+        <span class="ec-label">Votos Guerrero</span>
+        <span id="stat-guerrero" class="stat-num stat-guerrero">—</span>
+      </div>
+      <div class="glass-card stat-card">
+        <i data-lucide="gem"></i>
+        <span class="ec-label">Votos Guerrera</span>
+        <span id="stat-guerrera" class="stat-num stat-guerrera">—</span>
+      </div>
+    </div>
+
+    <!-- Visual Stats Row -->
+    <div class="visual-stats" id="visual-stats" style="display:none;">
+      <div class="glass-card chart-card">
+        <div class="battle-label">Distribución</div>
+        <div class="chart-container">
+          <svg viewBox="0 0 100 100">
+            <circle class="chart-bg" cx="50" cy="50" r="40"></circle>
+            <circle class="chart-fill guerrero" id="circle-guerrero" cx="50" cy="50" r="40" style="stroke: var(--saiyan-1)"></circle>
+            <circle class="chart-fill guerrera" id="circle-guerrera" cx="50" cy="50" r="40" style="stroke: var(--capsule-1)"></circle>
+          </svg>
+          <div class="chart-center">
+            <span class="chart-total-val" id="chart-total">0</span>
+            <span class="chart-total-lbl">Votos</span>
+          </div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><span class="dot g-oro"></span> Guerrero</div>
+          <div class="legend-item"><span class="dot g-pink"></span> Guerrera</div>
+        </div>
+      </div>
+
+      <div class="glass-card battle-card">
+        <div class="battle-label">Poder de Ki Actual</div>
+        <div class="battle-row">
+          <span class="battle-name" style="color:var(--saiyan-1)"><i data-lucide="zap"></i> Guerrero</span>
+          <div class="battle-track"><div class="battle-fill guerrero" id="bar-guerrero"></div></div>
+          <span class="battle-pct stat-guerrero" id="pct-guerrero">0%</span>
+        </div>
+        <div class="battle-row">
+          <span class="battle-name" style="color:var(--capsule-2)"><i data-lucide="gem"></i> Guerrera</span>
+          <div class="battle-track"><div class="battle-fill guerrera" id="bar-guerrera"></div></div>
+          <span class="battle-pct stat-guerrera" id="pct-guerrera">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table id="rsvp-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Acomp.</th>
+            <th>Equipo</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr class="empty-row"><td colspan="7">Introduce la clave de admin y pulsa «Cargar Datos»</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dash-actions" id="dash-actions" style="display:none;">
+      <select id="filter-status" class="admin-input" style="min-width:150px;">
+        <option value="all">Todos</option>
+        <option value="attending">Sí asistirán</option>
+        <option value="maybe">Aún no lo sé</option>
+        <option value="not-attending">No podré asistir</option>
+      </select>
+      <button onclick="downloadCSV()" class="rsvp-btn btn-maybe" style="padding:10px 20px;min-height:auto;gap:8px;">
+        <i data-lucide="file-spreadsheet" style="width:18px"></i> Exportar a Excel (CSV)
+      </button>
+      <button onclick="stopRefresh()" id="stop-btn" class="rsvp-btn" style="padding:10px 20px;min-height:auto;background:rgba(255,50,50,0.2);color:#ff6b6b;border:1px solid rgba(255,50,50,0.3);">
+        Pausar auto-refresh
+      </button>
+    </div>
+  </div>
+
+  <button id="back-to-top" class="rsvp-btn btn-yes" style="position:fixed; bottom:20px; right:20px; padding:10px 15px; min-height:auto; border-radius:50%; width:50px; height:50px; display:none;" title="Volver arriba">
+    <i data-lucide="chevron-up"></i>
+  </button>
+
+  <script>
+    // ── Auth gate ──────────────────────────────────────────────
+    (function() {
+      const pass = prompt('🔐 Clave de acceso admin:');
+      if (pass !== 'gordito1234') {
+        window.location.replace('index.html');
+      } else {
+        window.addEventListener('DOMContentLoaded', function() {
+          document.getElementById('admin-key').value = pass;
+          loadData();
+        });
+      }
+    })();
+    // ──────────────────────────────────────────────────────────
+
+    let allRsvpData   = [];
+    let currentFilter = 'all';
+    let currentKey    = null;
+    let refreshTimer  = null;
+    let refreshActive = false;
+
+    lucide.createIcons();
+
+    async function loadData() {
+      const keyInput = document.getElementById('admin-key');
+      const key = keyInput.value.trim() || currentKey;
+      if (!key) { alert('Introduce la clave de acceso.'); return; }
+      currentKey = key;
+      await fetchAndRender();
+      if (!refreshActive) startAutoRefresh();
+    }
+
+    async function fetchAndRender() {
+      try {
+        const res = await fetch('/api/rsvp', {
+          headers: { 'Authorization': currentKey }
+        });
+        if (res.status === 401) {
+          stopRefresh();
+          alert('Clave incorrecta o no autorizado.');
+          return;
+        }
+        if (!res.ok) throw new Error('Error de red: ' + res.status);
+        const data = await res.json();
+        renderDashboard(data);
+        document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString('es-ES');
+        document.getElementById('status-bar').style.display  = 'flex';
+        document.getElementById('visual-stats').style.display = 'grid';
+        document.getElementById('dash-actions').style.display = 'flex';
+        lucide.createIcons();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function startAutoRefresh() {
+      refreshActive = true;
+      refreshTimer  = setInterval(fetchAndRender, 10000);
+      document.getElementById('refresh-label').textContent = 'Actualización automática activa (10 s)';
+      document.getElementById('stop-btn').textContent = 'Pausar auto-refresh';
+    }
+
+    function stopRefresh() {
+      refreshActive = false;
+      clearInterval(refreshTimer);
+      refreshTimer = null;
+      document.getElementById('refresh-label').textContent = 'Auto-refresh pausado';
+      document.getElementById('stop-btn').textContent = 'Reanudar auto-refresh';
+      document.getElementById('stop-btn').onclick = () => { startAutoRefresh(); fetchAndRender(); };
+    }
+
+    function applyFilter() {
+      currentFilter = document.getElementById('filter-status').value;
+      renderDashboard(allRsvpData, currentFilter);
+    }
+
+    function renderDashboard(data, filterStatus = 'all') {
+      let totalGuests  = 0;
+      let votesGuerrero = 0;
+      let votesGuerrera = 0;
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
+
+      const filteredData = filterStatus === 'all'
+        ? data
+        : data.filter(item => item.status === filterStatus);
+
+      const sorted = [...data].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      filteredData.forEach((item, i) => {
+        if (item.status === 'attending') totalGuests += parseInt(item.guests || 1);
+        if (item.teamVote === 'Guerrero') votesGuerrero++;
+        if (item.teamVote === 'Guerrera') votesGuerrera++;
+
+        const date = item.timestamp
+          ? new Date(item.timestamp).toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
+          : '—';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="color:var(--text-3);font-size:0.75rem">${i + 1}</td>
+          <td style="font-weight:600">${escHtml(item.name || '—')}</td>
+          <td style="font-size:0.8rem;color:var(--text-3)">${escHtml(item.email || '—')}</td>
+          <td style="text-align:center">${item.guests || 1}</td>
+          <td>${item.teamVote ? `<span class="badge badge-${(item.teamVote||'').toLowerCase()}">${escHtml(item.teamVote)}</span>` : '<span style="color:var(--text-3)">—</span>'}</td>
+          <td><span class="badge badge-${item.status || 'attending'}">${statusLabel(item.status)}</span></td>
+          <td style="font-size:0.75rem;color:var(--text-3)">${date}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if (filteredData.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Sin confirmaciones aún</td></tr>';
+      }
+
+      animateNum('stat-total',    totalGuests);
+      animateNum('stat-guerrero', votesGuerrero);
+      animateNum('stat-guerrera', votesGuerrera);
+      document.getElementById('chart-total').textContent = votesGuerrero + votesGuerrera;
+      updateBattleBar(votesGuerrero, votesGuerrera);
+    }
+
+    function updateBattleBar(g, r) {
+      const total = g + r;
+      const gPct  = total ? Math.round((g / total) * 100) : 0;
+      const rPct  = total ? 100 - gPct : 0;
+
+      document.getElementById('bar-guerrero').style.width = gPct + '%';
+      document.getElementById('bar-guerrera').style.width = rPct + '%';
+      document.getElementById('pct-guerrero').textContent = gPct + '%';
+      document.getElementById('pct-guerrera').textContent = rPct + '%';
+
+      // Update Circle Chart (SVG Dashoffset logic)
+      const circumference = 2 * Math.PI * 40; // 251.32
+      const gOffset = circumference - (gPct / 100) * circumference;
+      const rOffset = circumference - (rPct / 100) * circumference;
+      
+      document.getElementById('circle-guerrero').style.strokeDashoffset = gOffset;
+      document.getElementById('circle-guerrera').style.strokeDashoffset = circumference; // Background style
+      // Para un pie chart real con 2 colores en un solo circulo es más complejo con stroke, 
+      // simplificamos animando el principal (Guerrero) sobre el fondo.
+    }
+
+    function downloadCSV() {
+      const rows  = Array.from(document.querySelectorAll('#rsvp-table tr'));
+      const csv   = rows.map(row => {
+        return Array.from(row.querySelectorAll('th,td'))
+          .map(cell => `"${cell.innerText.replace(/"/g, '""')}"`)
+          .join(',');
+      }).join('\n');
+
+      const blob = new Blob(['﻿', csv], { type: 'text/csv;charset=utf-8;' });
+      const a    = document.createElement('a');
+      a.href     = URL.createObjectURL(blob);
+      a.download = 'asistencia_gran_torneo.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function animateNum(id, target) {
+      const el  = document.getElementById(id);
+      let cur   = parseInt(el.textContent) || 0;
+      if (cur === target) { el.textContent = target; return; }
+      const step = Math.max(1, Math.ceil(Math.abs(target - cur) / 20));
+      const t = setInterval(() => {
+        cur += cur < target ? step : -step;
+        if (Math.abs(cur - target) <= step) { el.textContent = target; clearInterval(t); }
+        else el.textContent = cur;
+      }, 30);
+    }
+
+    function statusLabel(s) {
+      return s === 'attending' ? 'Sí' : s === 'maybe' ? 'Quizás' : s === 'not-attending' ? 'No' : s || '—';
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // Permitir Enter en el campo de clave
+    document.getElementById('admin-key').addEventListener('keydown', e => {
+      if (e.key === 'Enter') loadData();
+    });
+  </script>
+</body>
+</html>

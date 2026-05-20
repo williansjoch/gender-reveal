@@ -1783,6 +1783,21 @@ input { font-family: var(--ff-body); }
 
 .change-btn:hover { color: var(--text-2); }
 
+.admin-link {
+  display: inline-block;
+  margin-top: 18px;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.25);
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.admin-link:hover {
+  opacity: 1;
+}
+
 /* ═══════════════════════════════════════════════════════
    FOOTER
 ══════════════════════════════════════════════════════ */
