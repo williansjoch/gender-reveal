@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#050010" />
+  <meta name="description" content="Revelación de género · Erick & Maria · 30 de Mayo 2026" />
+  
+  <!-- Metaetiquetas para compartir (WhatsApp/Social Media) -->
+  <meta property="og:image" content="assets/images/og/preview.jpg" />
+  <meta property="og:title" content="💫 Revelación · Erick & Maria" />
+  <meta property="og:description" content="¡Estás invitado! Descubre si será Guerrero o Prodigio." />
+  <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+
+  <title>💫 Revelación · Erick & Maria</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Raleway:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Librerías Premium -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/typed.js@2.0.16/dist/typed.umd.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Asegura que el video de fondo sea visible y cubra todo */
+    .bg-video-global {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -2;
+      pointer-events: none;
+    }
+    .bg-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: -1;
+      pointer-events: none;
+    }
+    /* Estilos para los muñecos PNG */
+    .char-img {
+      max-width: 250px;
+      height: auto;
+      opacity: 0;
+      transform: translateY(30px) scale(0.9);
+      transition: opacity 1s ease, transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+    }
+    .char-img.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    .char-figure { display: flex; justify-content: center; align-items: center; }
+
+    /* Hacemos las secciones transparentes para que se vea el video de fondo */
+    #app section, #hero, #announcement, #event-details, #countdown, #teams, #rsvp, #footer {
+      background: transparent !important;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ BACKGROUND VIDEO ═══ -->
+<video id="bg-video" autoplay muted loop playsinline class="bg-video-global">
+  <source src="assets/images/mp_.mp4" type="video/mp4" />
+</video>
+<div class="bg-overlay"></div>
+
+<!-- ═══ PARTICLES CANVAS ═══ -->
+<canvas id="particles-canvas" aria-hidden="true"></canvas>
+
+<!-- ═══ CONFETTI CANVAS ═══ -->
+<canvas id="confetti-canvas" aria-hidden="true"></canvas>
+
+<!-- ═══ MUSIC TOGGLE ═══ -->
+<button id="music-toggle" class="music-btn" aria-label="Activar música" title="Música">
+  <span class="music-icon music-off">♪</span>
+  <span class="music-icon music-on hidden">♫</span>
+  <div class="music-ripple"></div>
+</button>
+<audio id="bg-music" loop>
+  <source src="assets/audio/ambient.mp3" type="audio/mpeg" />
+</audio>
+
+<!-- ═══════════════════════════════════
+     LOADING SCREEN
+════════════════════════════════════ -->
+<div id="loading-screen">
+  <div class="loading-orbs">
+    <div class="load-orb orb-saiyan"></div>
+    <div class="load-orb orb-capsule"></div>
+  </div>
+  <div class="loading-content">
+    <div class="loading-stars">
+      <span class="ls ls1">✦</span>
+      <span class="ls ls2">✦</span>
+      <span class="ls ls3">✦</span>
+    </div>
+    <p class="loading-text">Una invitación especial te espera…</p>
+    <div class="db-loader-container">
+      <div class="db-loader-track"></div>
+      <div id="db-loader-ball" class="db-loader-ball">
+        <div class="db-ball-stars">
+          <span>★</span><span>★</span><span>★</span><span>★</span>
+        </div>
+      </div>
+    </div>
+    <p class="loading-sub" id="loading-sub">Preparando la magia…</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     ENVELOPE SCENE
+════════════════════════════════════ -->
+<section id="envelope-scene" class="hidden">
+  <div class="env-scene-inner">
+
+    <!-- Envelope -->
+    <div class="envelope-wrap">
+      <div class="envelope" id="envelope" role="button" tabindex="0" aria-label="Toca para abrir la invitación">
+        <div id="ki-explosion-effect"></div>
+
+        <!-- Fondo del sobre (Parte trasera) -->
+        <svg class="env-back" viewBox="0 0 300 200" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="envBase" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="50%" stop-color="#f5f5f5"/>
+              <stop offset="100%" stop-color="#e8e8e8"/>
+            </linearGradient>
+          </defs>
+          <!-- Body -->
+          <rect x="0" y="0" width="300" height="200" rx="8" fill="url(#envBase)"/>
+          <!-- Gold border -->
+          <rect x="1" y="1" width="298" height="198" rx="7" fill="none" stroke="rgba(255,215,0,0.2)" stroke-width="1.5"/>
+        </svg>
+
+        <!-- Carta (slides up when opened) -->
+        <div class="env-letter" id="env-letter">
+          <div class="letter-inner">
+            <p class="letter-monogram">E <span class="letter-amp">✦</span> M</p>
+            <p class="letter-year">2026</p>
+          </div>
+        </div>
+
+        <!-- Frentes del sobre (Parte delantera para crear el efecto "dentro") -->
+        <svg class="env-svg-base" viewBox="0 0 300 200" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="envFoldL" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#fdfdfd"/>
+              <stop offset="100%" stop-color="#e0e0e0"/>
+            </linearGradient>
+            <linearGradient id="envFoldR" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#e0e0e0"/>
+              <stop offset="100%" stop-color="#fdfdfd"/>
+            </linearGradient>
+            <linearGradient id="envFoldB" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#eeeeee"/>
+              <stop offset="100%" stop-color="#d1d1d1"/>
+            </linearGradient>
+          </defs>
+          <!-- Left fold -->
+          <polygon points="0,0 0,200 150,100" fill="url(#envFoldL)" opacity="0.8"/>
+          <!-- Right fold -->
+          <polygon points="300,0 300,200 150,100" fill="url(#envFoldR)" opacity="0.8"/>
+          <!-- Bottom fold -->
+          <polygon points="0,200 300,200 150,100" fill="url(#envFoldB)" opacity="0.9"/>
+          <!-- Decorative inner diamond lines -->
+          <line x1="0" y1="0" x2="150" y2="100" stroke="rgba(255,215,0,0.08)" stroke-width="1"/>
+          <line x1="300" y1="0" x2="150" y2="100" stroke="rgba(255,215,0,0.08)" stroke-width="1"/>
+          <line x1="0" y1="200" x2="150" y2="100" stroke="rgba(255,215,0,0.06)" stroke-width="1"/>
+          <line x1="300" y1="200" x2="150" y2="100" stroke="rgba(255,215,0,0.06)" stroke-width="1"/>
+          <!-- Inner decorative border -->
+          <rect x="10" y="10" width="280" height="180" rx="4" fill="none" stroke="rgba(255,215,0,0.07)" stroke-width="1"/>
+        </svg>
+
+        <!-- Top flap (opens with 3D rotation) -->
+        <div class="env-flap" id="env-flap">
+          <svg class="env-flap-svg" viewBox="0 0 300 160" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="flapGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="60%" stop-color="#f9f9f9"/>
+                <stop offset="100%" stop-color="#f0f0f0"/>
+              </linearGradient>
+            </defs>
+            <polygon points="0,0 300,0 150,155" fill="url(#flapGrad)"/>
+            <!-- Flap border -->
+            <polyline points="0,0 300,0 150,155" fill="none" stroke="rgba(255,215,0,0.18)" stroke-width="1.5"/>
+          </svg>
+
+          <!-- Wax Seal -->
+          <div class="env-seal" id="env-seal">
+            <div class="seal-outer">
+              <div class="seal-inner">
+                <span class="db-star">★</span>
+                <span class="db-star">★</span>
+                <span class="db-star">★</span>
+                <span class="db-star">★</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- .envelope -->
+    </div><!-- .envelope-wrap -->
+
+    <!-- Envelope text -->
+    <div class="env-message">
+      <p class="env-text" id="env-text">Un mensaje de Guerrero o Guerrera te espera…</p>
+      <div class="tap-hint" id="tap-hint">
+        <span class="tap-dot"></span>
+        <span class="tap-label">Toca para abrir</span>
+      </div>
+    </div>
+
+  </div><!-- .env-scene-inner -->
+</section>
+
+<!-- ═══════════════════════════════════
+     MAIN INVITATION
+════════════════════════════════════ -->
+<main id="app" class="hidden">
+
+  <!-- ─── HERO: CHARACTERS ─── -->
+  <section id="hero" class="section">
+    <div class="hero-glow-bg"></div>
+
+    <div class="invitation-header reveal-up">
+      <p class="from-label">El Gran Torneo de</p>
+      <h1 class="parents-name">Erick & Maria</h1>
+      <p class="invite-line"><span id="typed-hero"></span></p>
+    </div>
+
+    <div class="characters-row centering-fix">
+
+      <!-- LEFT: Baby Warrior (Team Saiyan) -->
+      <div class="char-side left">
+        <div class="aura aura-saiyan"></div>
+        <div class="char-figure">
+          <img src="assets/images/1.png" class="char-img" alt="Bebé Guerrero">
+
+          <!-- Floating energy particles (CSS animated) -->
+          <div class="char-particles saiyan-p">
+            <span class="cp cp1">◆</span>
+            <span class="cp cp2">✦</span>
+            <span class="cp cp3">◆</span>
+            <span class="cp cp4">✦</span>
+            <span class="cp cp5">◆</span>
+          </div>
+        </div>
+
+        <div class="team-badge saiyan-badge">
+          <span class="tb-name">Guerrero</span>
+        </div>
+      </div>
+
+      <!-- CENTER: VS divider -->
+      <div class="vs-center">
+        <div class="vs-line vs-top"></div>
+        <div class="vs-circle"><span>VS</span></div>
+        <div class="vs-line vs-bot"></div>
+      </div>
+
+      <!-- RIGHT: Baby Genius (Team Capsule) -->
+      <div class="char-side right">
+        <div class="aura aura-capsule"></div>
+        <div class="char-figure">
+          <img src="assets/images/2.png" class="char-img" alt="Bebé Genio">
+
+          <!-- Floating energy particles (CSS animated) -->
+          <div class="char-particles capsule-p">
+            <span class="cp cp1">✿</span>
+            <span class="cp cp2">★</span>
+            <span class="cp cp3">✿</span>
+            <span class="cp cp4">★</span>
+            <span class="cp cp5">✿</span>
+          </div>
+        </div>
+
+        <div class="team-badge capsule-badge">
+          <span class="tb-name">Guerrera</span>
+        </div>
+      </div>
+
+    </div><!-- .characters-row -->
+
+    <div class="scroll-hint">
+      <div class="scroll-arrow"><i data-lucide="chevron-down"></i></div>
+      <p>Desliza para descubrir</p>
+    </div>
+  </section>
+
+  <!-- ─── ANNOUNCEMENT ─── -->
+  <section id="announcement" class="section section-mid">
+    <div class="section-glow-orb g-orange"></div>
+    <div class="section-glow-orb g-pink"></div>
+    <div class="glass-card announce-card reveal-up">
+      <p class="announce-crown"><i data-lucide="crown"></i></p>
+      <p class="announce-sub">Las Esferas han hablado</p>
+      <h2 class="announce-title">¿Guerrero o Guerrera?</h2>
+      <div class="ornament-divider"><span>✦</span><span class="od-line"></span><span>✦</span></div>
+      <p class="announce-body">
+        ¡Atención Guerreros Z! Hemos reunido las siete esferas e invocado al Gran Dragón para revelar el destino de nuestro nuevo integrante.<br/><br/>
+        Te invitamos a ser testigo del momento en que descubriremos si el próximo saiyan será un poderoso <strong>Guerrero</strong> o una valiente <strong>Guerrera</strong>.<br/><br/>
+        ¡Prepara tu energía y eleva tu Ki con nosotros en este evento legendario!
+      </p>
+    </div>
+  </section>
+
+  <!-- ─── EVENT DETAILS ─── -->
+  <section id="event-details" class="section section-tight">
+    <h2 class="section-title reveal-up">El Gran Día</h2>
+    <div class="event-grid centering-fix">
+      <div class="event-card glass-card reveal-up" style="--d:0.05s">
+        <div class="ec-icon"><i data-lucide="calendar"></i></div>
+        <div class="ec-body">
+          <span class="ec-label">Fecha</span>
+          <span class="ec-value">Sábado, 30 de Mayo</span>
+          <span class="ec-sub">2026</span>
+        </div>
+      </div>
+      <div class="event-card glass-card reveal-up" style="--d:0.15s">
+        <div class="ec-icon"><i data-lucide="clock"></i></div>
+        <div class="ec-body">
+          <span class="ec-label">Hora</span>
+          <span class="ec-value">18:00 horas</span>
+          <span class="ec-sub">¡No llegues tarde! ⚡</span>
+        </div>
+      </div>
+      <div class="event-card glass-card reveal-up" style="--d:0.25s">
+        <div class="ec-icon"><i data-lucide="map-pin"></i></div>
+        <div class="ec-body">
+          <span class="ec-label">Lugar</span>
+          <span class="ec-value">Bar Nuevo Ebro</span>
+          <span class="ec-sub">Miranda de Ebro, Burgos</span>
+          <a href="https://www.google.com/maps/search/?api=1&query=Bar+Nuevo+Ebro+Miranda+de+Ebro+Burgos" target="_blank" class="map-link">
+            <span>📍 Cómo llegar</span>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Nueva tarjeta: Temática -->
+      <div class="event-card glass-card reveal-up" style="--d:0.35s">
+        <div class="ec-icon"><i data-lucide="zap"></i></div>
+        <div class="ec-body">
+          <span class="ec-label">Temática</span>
+          <span class="ec-value">Dragon Ball</span>
+          <span class="ec-sub">¡Prepárate para la aventura!</span>
+        </div>
+      </div>
+
+      <!-- Nueva tarjeta: Código de Vestimenta -->
+      <div class="event-card glass-card reveal-up" style="--d:0.45s">
+        <div class="ec-icon"><i data-lucide="shirt"></i></div>
+        <div class="ec-body">
+          <span class="ec-label">Código de Vestimenta</span>
+          <span class="ec-value">Tu apuesta, tu color</span>
+          <span class="ec-sub">Para el código de vestimenta, animamos a los invitados a vestir colores según su apuesta: <span class="highlight-blue">azul</span> si creen que es niño, o <span class="highlight-pink">rosa</span> si creen que es niña.</span>
+        </div>
+      </div>
+
+      <!-- Nueva tarjeta: Dinámica de Regalos -->
+      <div class="event-card glass-card reveal-up" style="--d:0.55s">
+        <div class="ec-icon"><i data-lucide="gift"></i></div>
+        <div class="ec-body">
+          <span class="ec-label">Dinámica de Regalos</span>
+          <span class="ec-value">Un detalle según tu apuesta</span>
+          <div class="gift-options-wrap">
+            <div class="gift-option gift-boy">
+              <span class="go-icon"><i data-lucide="package"></i></span>
+              <span class="go-text">Apuesta niño: Traer pañales.</span>
+            </div>
+            <div class="gift-option gift-girl">
+              <span class="go-icon"><i data-lucide="shopping-bag"></i></span>
+              <span class="go-text">Apuesta niña: Traer toallitas.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── COUNTDOWN ─── -->
+  <section id="countdown" class="section section-tight">
+    <div class="countdown-bg-glow"></div>
+    <p class="cd-label reveal-up">El momento de la verdad llega en…</p>
+    <div class="countdown-timer reveal-up" id="countdown-timer">
+      <div class="time-block">
+        <span class="time-num" id="cd-days">00</span>
+        <span class="time-lbl">Días</span>
+      </div>
+      <span class="time-sep">:</span>
+      <div class="time-block">
+        <span class="time-num" id="cd-hours">00</span>
+        <span class="time-lbl">Horas</span>
+      </div>
+      <span class="time-sep">:</span>
+      <div class="time-block">
+        <span class="time-num" id="cd-min">00</span>
+        <span class="time-lbl">Min</span>
+      </div>
+      <span class="time-sep">:</span>
+      <div class="time-block">
+        <span class="time-num" id="cd-sec">00</span>
+        <span class="time-lbl">Seg</span>
+      </div>
+    </div>
+    <p class="cd-sublabel reveal-up" id="cd-sublabel">… ¿Estás listo?</p>
+  </section>
+
+  <!-- ─── TEAMS ─── -->
+  <section id="teams" class="section section-mid">
+    <h2 class="section-title reveal-up">¿Con qué equipo estás?</h2>
+    <p class="teams-hint reveal-up">Selecciona tu equipo para votar</p>
+    <div class="teams-grid">
+      <div class="team-card saiyan-card glass-card reveal-left" onclick="selectTeam('Guerrero')" id="team-Guerrero">
+        <div class="tc-glow saiyan-tc-glow"></div>
+        <div class="tc-symbol"><i data-lucide="zap"></i></div>
+        <h3 class="tc-name">Team Guerrero</h3>
+        <p class="tc-desc">¡Apuesto por un Guerrero!</p>
+        <div class="vote-indicator">Votado ✓</div>
+      </div>
+      <div class="team-card capsule-card glass-card reveal-right" onclick="selectTeam('Guerrera')" id="team-Guerrera">
+        <div class="tc-glow capsule-tc-glow"></div>
+        <div class="tc-symbol"><i data-lucide="gem"></i></div>
+        <h3 class="tc-name">Team Guerrera</h3>
+        <p class="tc-desc">¡Apuesto por una Guerrera!</p>
+        <div class="vote-indicator">Votado ✓</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── RSVP ─── -->
+  <section id="rsvp" class="section section-mid">
+    <div class="section-glow-orb g-purple"></div>
+    <h2 class="section-title reveal-up">Confirma tu presencia</h2>
+    <p class="rsvp-sub reveal-up">Tu energía es parte de esta historia</p>
+
+    <!-- RSVP Form -->
+    <div class="glass-card rsvp-card reveal-up" id="rsvp-form-wrap">
+      <div class="form-deco">
+        <span>✦</span>
+        <h3 class="form-title">¿Nos acompañas?</h3>
+        <span>✦</span>
+      </div>
+      <form id="rsvp-form" novalidate>
+        <div class="input-group">
+          <label for="rsvp-name">Tu nombre</label>
+          <input type="text" id="rsvp-name" name="name" placeholder="¿Cómo te llamas?" autocomplete="name" required />
+        </div>
+        <div class="input-group">
+          <label for="rsvp-email">Tu correo</label>
+          <input type="email" id="rsvp-email" name="email" placeholder="tu@correo.com" autocomplete="email" required />
+        </div>
+        <div class="input-group">
+          <label for="rsvp-guests">¿Cuántos sois?</label>
+          <input type="number" id="rsvp-guests" name="guests" min="1" max="10" value="1" required />
+        </div>
+        <p class="form-error hidden" id="form-error">Por favor, rellena todos los campos.</p>
+        <p class="rsvp-deadline-text" id="rsvp-deadline-text">Fecha límite de confirmación: 28/05/2026</p>
+        <div class="rsvp-btns">
+          <button type="button" class="rsvp-btn btn-yes" data-status="attending">
+            <span class="rb-icon"><i data-lucide="party-popper"></i></span>
+            <span class="rb-text">Sí asistiré</span>
+            <span class="rb-glow"></span>
+          </button>
+          <button type="button" class="rsvp-btn btn-maybe" data-status="maybe">
+            <span class="rb-icon"><i data-lucide="help-circle"></i></span>
+            <span class="rb-text">Aún no lo sé</span>
+            <span class="rb-glow"></span>
+          </button>
+          <button type="button" class="rsvp-btn btn-no" data-status="not-attending">
+            <span class="rb-icon"><i data-lucide="heart"></i></span>
+            <span class="rb-text">No podré asistir</span>
+            <span class="rb-glow"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- State: Attending -->
+    <div class="glass-card rsvp-state hidden" id="state-attending">
+      <div class="rs-icon"><i data-lucide="party-popper"></i></div>
+      <h3 class="rs-title">¡Nos vemos ahí!</h3>
+      <p class="rs-vote-summary"></p>
+      <div class="vote-results-container">
+        <div class="vote-bar-wrapper">
+          <div class="vote-fill guerrero" style="width: 0%"><span>0%</span></div>
+          <div class="vote-fill guerrera" style="width: 0%"><span>0%</span></div>
+        </div>
+        <div class="vote-labels">
+          <span>Guerrero</span>
+          <span>Guerrera</span>
+        </div>
+      </div>
+      <p class="rs-msg">Tu energía es parte de esta historia. El universo te espera con los brazos abiertos.</p>
+      <div class="rs-divider">✦ ✦ ✦</div>
+      <p class="rs-wa-label">Únete a nuestro grupo de WhatsApp</p>
+      <a href="https://chat.whatsapp.com/CQIozJp5mdg8OFI29uAlIU" id="whatsapp-btn" class="wa-btn" target="_blank" rel="noopener noreferrer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12.004 2C6.48 2 2 6.48 2 12c0 2.17.7 4.19 1.89 5.84L2 22l4.29-1.39C7.79 21.46 9.81 22 12.004 22 17.52 22 22 17.52 22 12S17.52 2 12.004 2zm4.18 13.84c-.23.64-1.34 1.17-1.85 1.24-.46.07-.92.1-3.03-.77-2.69-1.11-4.42-3.86-4.55-4.04-.13-.18-1.09-1.45-1.09-2.77s.69-1.97.94-2.24c.25-.27.54-.34.72-.34h.52c.16 0 .37.01.54.4.18.42.63 1.54.68 1.66.05.12.09.26 0 .43-.09.18-.13.29-.27.45l-.44.53c-.14.16-.3.33-.13.62.17.29.74 1.21 1.59 1.97.85.76 1.56 1 1.85 1.13.29.13.46.11.64-.09.18-.19.78-.9.99-1.2.2-.3.41-.25.69-.15s1.77.83 2.07.98c.3.15.5.23.57.35.07.12.07.7-.16 1.34z"/></svg>
+        <span>Unirme al grupo</span>
+      </a>
+      <button class="change-btn" onclick="resetRSVP()">Cambiar respuesta</button>
+    </div>
+
+    <!-- State: Maybe -->
+    <div class="glass-card rsvp-state hidden" id="state-maybe">
+      <div class="rs-icon"><i data-lucide="star"></i></div>
+      <h3 class="rs-title">¡Lo entendemos!</h3>
+      <p class="rs-vote-summary"></p>
+      <div class="vote-results-container">
+        <div class="vote-bar-wrapper">
+          <div class="vote-fill guerrero" style="width: 0%"><span>0%</span></div>
+          <div class="vote-fill guerrera" style="width: 0%"><span>0%</span></div>
+        </div>
+        <div class="vote-labels">
+          <span>Guerrero</span>
+          <span>Guerrera</span>
+        </div>
+      </div>
+      <p class="rs-msg">La vida tiene sus propios planes. Si al final puedes venir, ¡serás más que bienvenido/a! Hemos guardado tu lugar en nuestros corazones.</p>
+      <div class="rs-divider">✦ ✦ ✦</div>
+      <button class="change-btn" onclick="resetRSVP()">Cambiar respuesta</button>
+    </div>
+
+    <!-- State: Not Attending -->
+    <div class="glass-card rsvp-state hidden" id="state-not-attending">
+      <div class="rs-icon"><i data-lucide="mail"></i></div>
+      <h3 class="rs-title">Te llevaremos en el corazón</h3>
+      <p class="rs-vote-summary"></p>
+      <div class="vote-results-container">
+        <div class="vote-bar-wrapper">
+          <div class="vote-fill guerrero" style="width: 0%"><span>0%</span></div>
+          <div class="vote-fill guerrera" style="width: 0%"><span>0%</span></div>
+        </div>
+        <div class="vote-labels">
+          <span>Guerrero</span>
+          <span>Guerrera</span>
+        </div>
+      </div>
+      <p class="rs-msg">Aunque no puedas estar, tu cariño nos llena de energía. ¡Gracias por ser parte de nuestra historia, guerrero/a!</p>
+      <div class="rs-divider">✦ ✦ ✦</div>
+      <button class="change-btn" onclick="resetRSVP()">Cambiar respuesta</button>
+    </div>
+
+  </section>
+
+  <!-- ─── FOOTER ─── -->
+  <footer id="footer">
+    <div class="footer-glow"></div>
+    <div class="footer-orbs">
+      <div class="fo fo-saiyan"></div>
+      <div class="fo fo-capsule"></div>
+    </div>
+    <div class="footer-content">
+      <div class="footer-stars">
+        <span class="fs">✦</span><span class="fs">✦</span><span class="fs">✦</span>
+      </div>
+      <h2 class="footer-names">Erick & Maria</h2>
+      <p class="footer-line">Te esperamos el</p>
+      <p class="footer-date">30 de Mayo · 18:00h · Miranda de Ebro</p>
+      <p class="footer-emoji">Una nueva aventura comienza… ⚡</p>
+    </div>
+  </footer>
+
+</main><!-- #app -->
+
+<script src="js/app.js"></script>
+</body>
+</html>
