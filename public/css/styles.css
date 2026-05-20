@@ -1086,12 +1086,20 @@ input { font-family: var(--ff-body); }
 
 /* Estilo para el texto de la fecha límite en RSVP */
 .rsvp-deadline-text {
-  font-size: 0.85rem;
-  color: var(--gold-dim);
+  font-size: 0.95rem;
+  color: var(--gold);
   text-align: center;
-  margin-top: 10px;
-  margin-bottom: 20px;
-  font-style: italic;
+  margin: 15px auto 25px;
+  padding: 10px 20px;
+  border: 1px dashed var(--gold-dim);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 215, 0, 0.05);
+  display: inline-block;
+  width: 100%;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
 }
 
 .teams-hint {
@@ -1782,6 +1790,11 @@ input { font-family: var(--ff-body); }
 }
 
 .change-btn:hover { color: var(--text-2); }
+
+/* Dashboard specific styles */
+.admin-input {
+  min-width: 240px; /* Asegura que el input de clave sea más ancho */
+}
 
 .admin-link {
   display: inline-block;

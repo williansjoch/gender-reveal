@@ -8,12 +8,14 @@
 /* ─── CONFIG ─── */
 const CONFIG = {
   eventDate:    new Date('2026-05-30T18:00:00+02:00'),
-  whatsappLink: 'https://chat.whatsapp.com/CQIozJp5mdg8OFI29uAlIU',   // ← reemplaza con tu link real
+  whatsappLink: 'https://chat.whatsapp.com/Egfb5cr3sow0rhpX0DEXQt?mode=gi_t',   // ← reemplaza con tu link real
   rsvpDeadline: new Date('2026-05-28T23:59:59+02:00'), // Fecha límite para RSVP
   apiEndpoint:  '/api/rsvp',
   audioOpenPath: 'assets/audio/open.mp3',
   loadDuration: 2600,   // ms
 };
+
+const PARENTS_NAMES = "Erick & Maria"; // Para contenido dinámico
 
 let state = {
   selectedTeam: null,
@@ -471,10 +473,9 @@ function updateCountdown() {
   secEl.textContent   = pad(s);
 
   if (sub) {
-    const days = d;
-    if (days === 0)      sub.textContent = '¡Hoy es el gran día! 🎊';
-    else if (days === 1) sub.textContent = '¡Mañana es el momento! ⚡';
-    else                 sub.textContent = `¡Faltan ${days} días para la revelación!`;
+    if (d === 0)         sub.textContent = '¡Hoy es el gran día! 🎊';
+    else if (d === 1)    sub.textContent = '¡Mañana es el momento! ⚡';
+    else                 sub.textContent = `¡Faltan ${d} días para la revelación!`;
   }
 }
 
