@@ -25,12 +25,20 @@ let state = {
 const qs  = (sel, ctx = document) => ctx.querySelector(sel);
 const qsa = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 
+function initLetterContent() {
+  const monogram = qs('#letter-monogram');
+  const year = qs('#letter-year');
+  if (monogram) monogram.innerHTML = 'E <span class="letter-amp">✦</span> M';
+  if (year) year.textContent = CONFIG.eventDate.getFullYear();
+}
+
 /* ═══════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   gsap.registerPlugin(ScrollTrigger);
   lucide.createIcons();
+  initLetterContent();
   initParticles();
   runLoadingSequence();
 });
@@ -197,7 +205,7 @@ function openEnvelope() {
       opacity: 0,
       duration: 0.3,
       onComplete: () => {
-    envText.textContent   = '¡Tu invitación está aquí!';
+        envText.textContent = '¡Tu invitación está aquí!';
       }
     }, "-=1.0"); // Inicia antes
 
