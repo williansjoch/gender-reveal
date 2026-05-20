@@ -11,8 +11,8 @@ pages_build_output_dir = "public"
 
 [[kv_namespaces]]
 binding    = "RSVP_DATA"
-id         = "REEMPLAZA_CON_TU_KV_ID"
-preview_id = "REEMPLAZA_CON_TU_KV_PREVIEW_ID"
+id         = "37c4637f2c3548b1a3ebf6951b088cc1"
+preview_id = "d112663c9c6740b4bd04bc252b1ea1f1"
 
 # ── Variables de entorno ──────────────────────────────────
 # ADMIN_KEY: configúrala como Secret en el panel de Cloudflare
