@@ -1,74 +1,84 @@
-export async function onRequest(context) {
-  const { request, env } = context;
-  const ADMIN_KEY = env.ADMIN_KEY;
+const ADMIN_KEY = 'gordito1234';
 
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
+const cors = {
+  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
 
-  if (request.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+export async function onRequest({ request, env }) {
+  if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
 
-  // POST /api/rsvp — guardar voto en KV
-  if (request.method === "POST") {
+  const auth = (request.headers.get('Authorization') || '').trim();
+  const isAdmin = auth === ADMIN_KEY;
+
+  // ── POST: guardar RSVP en D1 ──────────────────────────────
+  if (request.method === 'POST') {
+    let body;
+    try { body = await request.json(); } catch {
+      return Response.json({ error: 'JSON inválido' }, { status: 400, headers: cors });
+    }
+    const { name, email, guests, status, teamVote, timestamp } = body;
+    if (!name || !email) {
+      return Response.json({ error: 'Nombre y email son obligatorios' }, { status: 400, headers: cors });
+    }
     try {
-      const data = await request.json();
-      if (!data.email || !data.name) {
-        return new Response(JSON.stringify({ error: "Datos incompletos" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const key = `rsvp:${data.email.toLowerCase().trim()}`; // Usamos el email como clave para evitar duplicados del mismo invitado
-      await env.RSVP_DATA.put(key, JSON.stringify({
-        name:      data.name,
-        email:     data.email.toLowerCase().trim(),
-        guests:    data.guests   || 1,
-        status:    data.status   || "attending",
-        teamVote:  data.teamVote || null,
-        timestamp: data.timestamp || new Date().toISOString(),
-      }));
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      await env.DB.prepare(
+        'INSERT INTO asistencias (nombre, email, cantidad, asistencia, equipo, fecha) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(
+        name,
+        email.toLowerCase().trim(),
+        parseInt(guests) || 1,
+        status    || 'attending',
+        teamVote  || '',
+        timestamp || new Date().toISOString()
+      ).run();
+      return Response.json({ ok: true }, { status: 201, headers: cors });
     } catch (err) {
-      return new Response(JSON.stringify({ error: "Error al guardar o datos inválidos. Asegúrate de que el email es único." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return Response.json({ error: 'Error al guardar: ' + err.message }, { status: 500, headers: cors });
     }
   }
 
-  // GET /api/rsvp — sin auth: solo stats públicos | con auth: lista completa
-  if (request.method === "GET") {
-    const auth = request.headers.get("Authorization");
+  // ── GET: stats públicos o lista completa (admin) ──────────
+  if (request.method === 'GET') {
+    const { results } = await env.DB.prepare(
+      'SELECT * FROM asistencias ORDER BY id DESC'
+    ).all();
 
-    const list = await env.RSVP_DATA.list({ prefix: "rsvp:" });
-    const entries = await Promise.all(
-      list.keys.map(k => env.RSVP_DATA.get(k.name, { type: "json" }))
-    );
-    const valid = entries.filter(Boolean);
-
-    // Sin clave de admin → devolver solo conteos agregados (sin datos personales)
-    if (!auth || auth !== ADMIN_KEY) { // Si no hay auth o no coincide, devuelve solo conteos públicos
-      const counts = { guerrero: 0, guerrera: 0, total: valid.length };
-      for (const e of valid) {
-        if (e.teamVote === "Guerrero") counts.guerrero++;
-        if (e.teamVote === "Guerrera") counts.guerrera++;
-      }
-      return new Response(JSON.stringify(counts), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!isAdmin) {
+      const guerrero = results.filter(r => r.equipo === 'Guerrero').length;
+      const guerrera = results.filter(r => r.equipo === 'Guerrera').length;
+      return Response.json({ guerrero, guerrera, total: results.length }, { headers: cors });
     }
 
-    // Con clave de admin → lista completa
-    return new Response(JSON.stringify(valid), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const data = results.map(r => ({
+      name:      r.nombre,
+      email:     r.email,
+      guests:    r.cantidad,
+      status:    r.asistencia,
+      teamVote:  r.equipo,
+      timestamp: r.fecha,
+    }));
+    return Response.json(data, { headers: cors });
   }
 
-  return new Response("Not Found", { status: 404, headers: corsHeaders });
+  // ── DELETE: borrar registro por email o todos ─────────────
+  if (request.method === 'DELETE') {
+    if (!isAdmin) {
+      return Response.json({ error: 'No autorizado' }, { status: 401, headers: cors });
+    }
+    const url   = new URL(request.url);
+    const email = url.searchParams.get('email');
+
+    if (email) {
+      await env.DB.prepare('DELETE FROM asistencias WHERE email = ?')
+        .bind(email.toLowerCase().trim()).run();
+      return Response.json({ ok: true, deleted: email }, { headers: cors });
+    } else {
+      await env.DB.prepare('DELETE FROM asistencias').run();
+      return Response.json({ ok: true, deleted: 'all' }, { headers: cors });
+    }
+  }
+
+  return new Response('Not Found', { status: 404, headers: cors });
 }

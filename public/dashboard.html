@@ -69,7 +69,7 @@
     @media (max-width: 768px) { .visual-stats { grid-template-columns: 1fr; } }
 
     .chart-card { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
-    .chart-container { width: 180px; height: 180px; position: relative; margin-bottom: 20px; transform: rotate(-90deg); } /* Rotar el contenedor para que 0% esté arriba */
+    .chart-container { width: 180px; height: 180px; position: relative; margin-bottom: 20px; } /* Rotar el contenedor para que 0% esté arriba */
     .chart-container svg { transform: rotate(-90deg); width: 100%; height: 100%; overflow: visible; } /* overflow: visible para stroke-linecap: round */
     .chart-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 20; } /* Fondo del círculo */
     .chart-fill { fill: none; stroke-width: 20; stroke-dasharray: 251.327; stroke-dashoffset: 251.327; transition: stroke-dashoffset 1s ease-out; stroke-linecap: round; } /* Circunferencia para r=40 es 2*PI*40 = 251.327 */
@@ -149,20 +149,23 @@
 
     <!-- Stats -->
     <div class="stats-grid">
-      <div class="glass-card stat-card">
-        <i data-lucide="users"></i>
-        <span class="ec-label">Total Confirmados</span>
-        <span id="stat-total" class="stat-num stat-total">—</span>
+      <div class="glass-card stat-card" style="grid-column: span 2;">
+        <i data-lucide="user-check"></i>
+        <span class="ec-label">Total Asistentes</span>
+        <span id="stat-total-guests-attending" class="stat-num stat-total">—</span>
+        <span class="ec-sub" style="font-size:0.7rem;margin-top:5px;">(Personas que SÍ irán)</span>
       </div>
       <div class="glass-card stat-card">
         <i data-lucide="zap"></i>
         <span class="ec-label">Votos Guerrero</span>
         <span id="stat-guerrero" class="stat-num stat-guerrero">—</span>
+        <span class="ec-sub" style="font-size:0.7rem;margin-top:5px;">(Apuestas por Niño)</span>
       </div>
       <div class="glass-card stat-card">
         <i data-lucide="gem"></i>
         <span class="ec-label">Votos Guerrera</span>
         <span id="stat-guerrera" class="stat-num stat-guerrera">—</span>
+        <span class="ec-sub" style="font-size:0.7rem;margin-top:5px;">(Apuestas por Niña)</span>
       </div>
     </div>
 
@@ -171,7 +174,7 @@
       <div class="glass-card chart-card">
         <div class="battle-label">Distribución</div>
           <div class="chart-container" style="transform:rotate(-90deg);">
-            <svg viewBox="0 0 100 100" style="overflow:visible;">
+            <svg viewBox="0 0 100 100" style="overflow:visible; transform:rotate(90deg);">
               <circle class="chart-bg" cx="50" cy="50" r="40" style="stroke:rgba(255,255,255,0.05);"></circle>
               <circle class="chart-fill guerrero" id="circle-guerrero" cx="50" cy="50" r="40" style="stroke: var(--saiyan-1);"></circle>
               <circle class="chart-fill guerrera" id="circle-guerrera" cx="50" cy="50" r="40" style="stroke: var(--capsule-1);"></circle>
@@ -187,7 +190,7 @@
         </div>
       </div>
 
-      <div class="glass-card battle-card">
+      <div class="glass-card battle-card" style="grid-column: span 1.5;">
         <div class="battle-label">Poder de Ki Actual</div>
         <div class="battle-row">
             <span class="battle-name" style="color:var(--saiyan-1)"><i data-lucide="zap" style="width:18px;height:18px;"></i> Guerrero</span>
@@ -214,6 +217,7 @@
             <th><i data-lucide="swords" style="width:16px;height:16px;vertical-align:middle;margin-right:5px;"></i> Equipo</th>
             <th><i data-lucide="check-circle" style="width:16px;height:16px;vertical-align:middle;margin-right:5px;"></i> Estado</th>
             <th><i data-lucide="calendar" style="width:16px;height:16px;vertical-align:middle;margin-right:5px;"></i> Fecha</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="table-body">
@@ -221,7 +225,7 @@
         </tbody>
       </table>
     </div>
-
+    
     <div class="dash-actions" id="dash-actions" style="display:none;">
       <select id="filter-status" class="admin-input" style="min-width:150px;">
         <option value="all">Todos</option>
@@ -234,6 +238,9 @@
       </button>
       <button onclick="stopRefresh()" id="stop-btn" class="rsvp-btn" style="padding:10px 20px;min-height:auto;background:rgba(255,50,50,0.2);color:#ff6b6b;border:1px solid rgba(255,50,50,0.3);">
         Pausar auto-refresh
+      </button>
+      <button onclick="deleteAllData()" class="rsvp-btn" style="padding:10px 20px;min-height:auto;background:rgba(255,50,50,0.15);color:#ff6b6b;border:1px solid rgba(255,50,50,0.3);display:flex;align-items:center;gap:8px;">
+        <i data-lucide="trash-2" style="width:18px"></i> Borrar Todo
       </button>
     </div>
   </div>
@@ -286,7 +293,8 @@
         }
         if (!res.ok) throw new Error('Error de red: ' + res.status);
         const data = await res.json();
-        renderDashboard(data);
+        allRsvpData = data;
+        renderDashboard(data, currentFilter);
         document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString('es-ES');
         document.getElementById('status-bar').style.display  = 'flex';
         document.getElementById('visual-stats').style.display = 'grid';
@@ -319,7 +327,9 @@
     }
 
     function renderDashboard(data, filterStatus = 'all') {
-      let totalGuests  = 0;
+      let totalGuestsAttending = 0; // Renombrado para claridad
+      let totalGuestsMaybe = 0;
+      let totalGuestsNotAttending = 0;
       let votesGuerrero = 0;
       let votesGuerrera = 0;
       const tbody = document.getElementById('table-body');
@@ -331,10 +341,14 @@
 
       const sorted = [...data].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-      filteredData.forEach((item, i) => {
-        if (item.status === 'attending') totalGuests += parseInt(item.guests || 1); // Sumar solo asistentes confirmados
+      // Votos y totales siempre sobre TODOS los datos, no el filtro
+      data.forEach(item => {
+        if (item.status === 'attending') totalGuestsAttending += parseInt(item.guests || 1);
         if (item.teamVote === 'Guerrero') votesGuerrero++;
         if (item.teamVote === 'Guerrera') votesGuerrera++;
+      });
+
+      filteredData.forEach((item, i) => {
 
         const date = item.timestamp
           ? new Date(item.timestamp).toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
@@ -343,22 +357,26 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="color:var(--text-3);font-size:0.75rem">${i + 1}</td>
-          <td style="font-weight:600">${escHtml(item.name || '—')}</td>
+          <td style="font-weight:600">${escHtml(item.name || '—')}</td> 
           <td style="font-size:0.8rem;color:var(--text-3)">${escHtml(item.email || '—')}</td>
           <td style="text-align:center">${item.guests || 1}</td>
-          <td>${item.teamVote ? `<span class="badge badge-${(item.teamVote||'').toLowerCase()}">${escHtml(item.teamVote)}</span>` : '<span style="color:var(--text-3)">—</span>'}</td>
+          <td>${item.teamVote ? `<span class="badge badge-${(item.teamVote||'').toLowerCase()}">${escHtml(item.teamVote)}</span>` : '<span class="badge" style="background:rgba(255,255,255,0.05);color:var(--text-3)">—</span>'}</td>
           <td><span class="badge badge-${item.status || 'attending'}">${statusLabel(item.status)}</span></td>
           <td style="font-size:0.75rem;color:var(--text-3)">${date}</td>
+          <td>
+            <button onclick="deleteIndividualRsvp('${escHtml(item.email)}')" class="rsvp-btn btn-no" style="padding:6px 10px;min-height:auto;font-size:0.7rem;gap:5px;background:rgba(255,50,50,0.1);color:#ff6b6b;border:1px solid rgba(255,50,50,0.2);">
+              <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+            </button>
+          </td>
         `;
         tbody.appendChild(tr);
       });
 
       if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Sin confirmaciones aún</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Sin confirmaciones aún</td></tr>';
       }
 
-      animateNum('stat-total-rsvps', data.length); // Total de RSVPs únicos
-      animateNum('stat-total-guests', totalGuests); // Total de personas que asistirán
+      animateNum('stat-total-guests-attending', totalGuestsAttending);
       animateNum('stat-guerrero', votesGuerrero);
       animateNum('stat-guerrera', votesGuerrera);
       document.getElementById('chart-total').textContent = votesGuerrero + votesGuerrera;
@@ -387,20 +405,71 @@
     }
 
     function downloadCSV() {
-      const rows  = Array.from(document.querySelectorAll('#rsvp-table tr'));
-      const csv   = rows.map(row => {
-        return Array.from(row.querySelectorAll('th,td'))
-          .map(cell => `"${cell.innerText.replace(/"/g, '""')}"`)
-          .join(',');
-      }).join('\n');
+      const headers = Array.from(document.querySelectorAll('#rsvp-table thead th'))
+                            .filter(th => th.innerText.trim() !== 'Acciones') // Excluir columna de acciones
+                            .map(th => th.innerText.trim());
+      const dataRows = Array.from(document.querySelectorAll('#rsvp-table tbody tr:not(.empty-row)'));
 
-      const blob = new Blob(['﻿', csv], { type: 'text/csv;charset=utf-8;' });
-      const a    = document.createElement('a');
-      a.href     = URL.createObjectURL(blob);
-      a.download = 'asistencia_gran_torneo.csv';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const csvContent = [
+        headers.map(h => `"${h.replace(/"/g, '""')}"`).join(','), // CSV Headers
+        ...dataRows.map(row => {
+          const cols = Array.from(row.querySelectorAll('td'));
+          // Excluir la última columna (Acciones)
+          return cols.slice(0, -1).map(col => `"${col.innerText.replace(/"/g, '""')}"`).join(',');
+        })
+      ].join('\n');
+
+      const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', 'asistencia_gran_torneo.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    async function deleteIndividualRsvp(email) {
+      if (!confirm(`¿Estás seguro de que quieres eliminar el registro de ${email}?`)) return;
+
+      try {
+        const res = await fetch(`/api/rsvp?email=${encodeURIComponent(email)}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': currentKey }
+        });
+        if (!res.ok) throw new Error('Error al eliminar el registro.');
+        alert(`Registro de ${email} eliminado con éxito.`);
+        fetchAndRender(); // Recargar datos para actualizar la tabla
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function deleteAllData() {
+      if (!confirm('⚠️ ¿ESTÁS ABSOLUTAMENTE SEGURO? Esta acción eliminará permanentemente TODOS los registros de asistencia y votos del universo.')) return;
+      
+      const validation = prompt('Para confirmar la eliminación total, escribe "BORRAR TODO" en mayúsculas:');
+      if (validation !== 'BORRAR TODO') {
+        alert('Acción cancelada. No se han borrado datos.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/rsvp', {
+          method: 'DELETE',
+          headers: { 'Authorization': currentKey }
+        });
+
+        if (res.ok) {
+          alert('¡Todos los datos han sido eliminados con éxito!');
+          allRsvpData = [];
+          renderDashboard([], 'all');
+        } else {
+          const errData = await res.json().catch(() => ({ error: 'Error de autorización o red' }));
+          throw new Error(errData.error || 'Error al intentar borrar los datos.');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
     }
 
     function animateNum(id, target) {
