@@ -22,7 +22,7 @@ export async function onRequest(context) {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const key = `rsvp:${data.email.toLowerCase().trim()}`;
+      const key = `rsvp:${data.email.toLowerCase().trim()}`; // Usamos el email como clave para evitar duplicados
       await env.RSVP_DATA.put(key, JSON.stringify({
         name:      data.name,
         email:     data.email.toLowerCase().trim(),
@@ -35,7 +35,7 @@ export async function onRequest(context) {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } catch (err) {
-      return new Response(JSON.stringify({ error: "Error al guardar" }), {
+      return new Response(JSON.stringify({ error: "Error al guardar o datos inválidos" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -53,7 +53,7 @@ export async function onRequest(context) {
     const valid = entries.filter(Boolean);
 
     // Sin clave de admin → devolver solo conteos agregados (sin datos personales)
-    if (!auth || !ADMIN_KEY || auth !== ADMIN_KEY) {
+    if (!auth || auth !== ADMIN_KEY) { // Si no hay auth o no coincide, devuelve solo conteos
       const counts = { guerrero: 0, guerrera: 0, total: valid.length };
       for (const e of valid) {
         if (e.teamVote === "Guerrero") counts.guerrero++;

@@ -1176,6 +1176,12 @@ input { font-family: var(--ff-body); }
   box-shadow: -4px 0 15px var(--capsule-glow); /* Sombra rosa */
 }
 
+/* Aplicar winning pulse a los segmentos del círculo también */
+.chart-fill.winning {
+  animation: winning-pulse 2s ease-in-out infinite;
+  filter: brightness(1.1); /* Ligeramente más brillante para el círculo */
+}
+
 /* ── WINNING PULSE ANIMATION ── */
 .vote-fill.winning {
   animation: winning-pulse 2s ease-in-out infinite;

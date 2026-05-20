@@ -1,22 +1,16 @@
-name                   = "gender-reveal"
-compatibility_date     = "2024-11-01"
+name = "gender-reveal"
 pages_build_output_dir = "public"
 
-# ── KV Namespace ─────────────────────────────────────────
-# Pasos para obtener los IDs:
-#   1. wrangler kv:namespace create "RSVP_DATA"
-#      → copia el "id" que aparece y pégalo en `id` abajo
-#   2. wrangler kv:namespace create "RSVP_DATA" --preview
-#      → copia el "id" y pégalo en `preview_id` abajo
-
+# KV namespace para RSVP — configura el ID real en el dashboard de Cloudflare Pages
+# Settings → Functions → KV namespace bindings → Add binding: RSVP_DATA
 [[kv_namespaces]]
-binding    = "RSVP_DATA"
-id         = "37c4637f2c3548b1a3ebf6951b088cc1"
-preview_id = "d112663c9c6740b4bd04bc252b1ea1f1"
+binding = "RSVP_DATA"
+id = "TU_ID_DE_KV_AQUI"
 
-# ── Variables de entorno ──────────────────────────────────
-# ADMIN_KEY: configúrala como Secret en el panel de Cloudflare
-# (Settings → Environment variables → Add secret)
-# NO la escribas aquí en texto plano.
-# Para desarrollo local puedes usar un archivo .dev.vars:
-#   ADMIN_KEY=tu-clave-local
+# Variables de entorno — configura ADMIN_KEY en Cloudflare Pages dashboard
+# Settings → Environment variables → Add variable: ADMIN_KEY
+[vars]
+ADMIN_KEY = "cambiar-en-cloudflare-dashboard"
+
+[[functions]]
+directory = "functions"
